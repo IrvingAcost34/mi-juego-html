@@ -12,14 +12,14 @@
       justify-content: center;
       align-items: center;
       height: 100vh;
-      user-select: none;
       font-family: Arial, sans-serif;
+      user-select: none;
     }
 
     #game {
       position: relative;
-      width: 300px;
-      height: 500px;
+      width: 320px;
+      height: 520px;
       background: #444;
       overflow: hidden;
       border: 4px solid #fff;
@@ -28,23 +28,23 @@
     .road-line {
       position: absolute;
       width: 10px;
-      height: 50px;
+      height: 60px;
       background: white;
-      left: 145px;
+      left: 155px;
       animation: road 1s linear infinite;
     }
 
     @keyframes road {
-      0% { top: -50px; }
-      100% { top: 500px; }
+      0% { top: -60px; }
+      100% { top: 520px; }
     }
 
     #car {
       position: absolute;
-      width: 40px;
-      height: 60px;
+      width: 50px;
+      height: 80px;
       bottom: 20px;
-      left: 130px;
+      left: 135px;
       background-image: url('mi_auto.png');
       background-size: contain;
       background-position: center;
@@ -54,18 +54,23 @@
 
     .enemy {
       position: absolute;
-      width: 40px;
-      height: 60px;
-      top: -60px;
+      width: 50px;
+      height: 80px;
+      top: -80px;
       animation: enemyMove 2.5s linear infinite;
       background-size: contain;
       background-position: center;
       background-repeat: no-repeat;
     }
 
+    .enemy.enemy3 {
+      width: 60px;
+      height: 90px;
+    }
+
     @keyframes enemyMove {
-      0% { top: -60px; }
-      100% { top: 550px; }
+      0% { top: -80px; }
+      100% { top: 540px; }
     }
 
     #score, #time {
@@ -78,6 +83,31 @@
 
     #score { top: 10px; left: 10px; }
     #time { top: 10px; right: 10px; }
+
+    #metaBar {
+      position: absolute;
+      top: 35px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 18px;
+      color: gold;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 3px 10px;
+      border-radius: 10px;
+      display: none;
+    }
+
+    #banderita {
+      position: absolute;
+      top: 5px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 30px;
+      height: 30px;
+      background-image: url('meta.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+    }
 
     #controls {
       margin-top: 15px;
@@ -95,11 +125,6 @@
       border: 2px solid white;
       border-radius: 10px;
       cursor: pointer;
-      user-select: none;
-    }
-
-    button:active {
-      background-color: #555;
     }
 
     #game-over {
@@ -130,6 +155,8 @@
   <div id="game">
     <div id="score">Score: 0</div>
     <div id="time">Time: 0s</div>
+    <div id="metaBar">🎯 ¡Meta conseguida!</div>
+    <div id="banderita"></div>
     <div id="car"></div>
     <div id="game-over">
       <h2>💥 ¡Chocaste!</h2>
@@ -155,77 +182,66 @@
     const finalScore = document.getElementById("final-score");
     const finalTime = document.getElementById("final-time");
     const restartBtn = document.getElementById("restart-btn");
+    const metaBar = document.getElementById("metaBar");
 
-    let score = 0;
-    let startTime = 0;
-    let elapsedTime = 0;
+    let score = 0, elapsedTime = 0, startTime = 0;
     let gameInterval, enemyInterval, roadInterval;
     let gameRunning = false;
     let keys = {};
     let leftPressed = false, rightPressed = false;
     let enemySpawnSpeed = 1200;
     let bestScore = localStorage.getItem("mejorPuntuacion") || 0;
+    let metaActual = 300;
 
-    document.addEventListener("keydown", (e) => {
-      keys[e.key] = true;
-      if (!gameRunning) startGame();
-    });
+    const enemyImages = ['enemigo1.png', 'enemigo2.png', 'enemigo3.png'];
 
-    document.addEventListener("keyup", (e) => {
-      keys[e.key] = false;
-    });
-
+    document.addEventListener("keydown", e => { keys[e.key] = true; if (!gameRunning) startGame(); });
+    document.addEventListener("keyup", e => keys[e.key] = false);
     leftBtn.addEventListener("mousedown", () => { leftPressed = true; if (!gameRunning) startGame(); });
-    leftBtn.addEventListener("mouseup", () => { leftPressed = false; });
-    leftBtn.addEventListener("touchstart", () => { leftPressed = true; if (!gameRunning) startGame(); });
-    leftBtn.addEventListener("touchend", () => { leftPressed = false; });
-
+    leftBtn.addEventListener("mouseup", () => leftPressed = false);
     rightBtn.addEventListener("mousedown", () => { rightPressed = true; if (!gameRunning) startGame(); });
-    rightBtn.addEventListener("mouseup", () => { rightPressed = false; });
+    rightBtn.addEventListener("mouseup", () => rightPressed = false);
+    leftBtn.addEventListener("touchstart", () => { leftPressed = true; if (!gameRunning) startGame(); });
+    leftBtn.addEventListener("touchend", () => leftPressed = false);
     rightBtn.addEventListener("touchstart", () => { rightPressed = true; if (!gameRunning) startGame(); });
-    rightBtn.addEventListener("touchend", () => { rightPressed = false; });
+    rightBtn.addEventListener("touchend", () => rightPressed = false);
 
     function moveCar() {
-      let left = parseInt(window.getComputedStyle(car).getPropertyValue("left"));
+      let left = parseInt(getComputedStyle(car).getPropertyValue("left"));
       if ((keys["ArrowLeft"] || leftPressed) && left > 0) car.style.left = (left - 10) + "px";
-      if ((keys["ArrowRight"] || rightPressed) && left < 260) car.style.left = (left + 10) + "px";
+      if ((keys["ArrowRight"] || rightPressed) && left < 270) car.style.left = (left + 10) + "px";
     }
 
     function createEnemy() {
       const enemy = document.createElement("div");
       enemy.classList.add("enemy");
 
-      const enemyImages = ['enemigo1.png', 'enemigo2.png', 'enemigo3.png'];
-      const randomIndex = Math.floor(Math.random() * enemyImages.length);
-      enemy.style.backgroundImage = `url('${enemyImages[randomIndex]}')`;
+      const index = Math.floor(Math.random() * enemyImages.length);
+      const img = enemyImages[index];
+      enemy.style.backgroundImage = `url('${img}')`;
+      if (img.includes('enemigo3')) enemy.classList.add("enemy3");
 
       const lanes = [30, 130, 230];
       enemy.style.left = lanes[Math.floor(Math.random() * lanes.length)] + "px";
       game.appendChild(enemy);
-
-      setTimeout(() => {
-        if (enemy.parentNode) enemy.remove();
-      }, 3000);
+      setTimeout(() => enemy.remove(), 3000);
     }
 
     function createRoadLine() {
       const line = document.createElement("div");
       line.classList.add("road-line");
       game.appendChild(line);
-      setTimeout(() => {
-        if (line.parentNode) line.remove();
-      }, 1000);
+      setTimeout(() => line.remove(), 1000);
     }
 
-    function detectCollision(enemy) {
-      const carRect = car.getBoundingClientRect();
-      const enemyRect = enemy.getBoundingClientRect();
-
+    function detectCollision(a, b) {
+      const rectA = a.getBoundingClientRect();
+      const rectB = b.getBoundingClientRect();
       return !(
-        carRect.top > enemyRect.bottom ||
-        carRect.bottom < enemyRect.top ||
-        carRect.right < enemyRect.left ||
-        carRect.left > enemyRect.right
+        rectA.top > rectB.bottom ||
+        rectA.bottom < rectB.top ||
+        rectA.right < rectB.left ||
+        rectA.left > rectB.right
       );
     }
 
@@ -237,23 +253,26 @@
       }
     }
 
+    function checkMeta() {
+      if (score >= metaActual) {
+        metaBar.style.display = "block";
+        setTimeout(() => metaBar.style.display = "none", 1500);
+        metaActual += 300;
+      }
+    }
+
     function gameLoop() {
       moveCar();
-
-      const enemies = document.querySelectorAll(".enemy");
-      for (const enemy of enemies) {
-        if (detectCollision(enemy)) {
-          endGame();
-          return;
-        }
-      }
+      document.querySelectorAll(".enemy").forEach(enemy => {
+        if (detectCollision(enemy, car)) endGame();
+      });
 
       score++;
       scoreText.textContent = "Score: " + score;
       elapsedTime = Math.floor((Date.now() - startTime) / 1000);
       timeText.textContent = "Time: " + elapsedTime + "s";
-
       updateDificultad();
+      checkMeta();
     }
 
     function startGame() {
@@ -262,13 +281,12 @@
       score = 0;
       elapsedTime = 0;
       enemySpawnSpeed = 1200;
+      metaActual = 300;
       startTime = Date.now();
-
-      car.style.left = "130px";
       gameOverDiv.style.display = "none";
-      document.querySelectorAll(".enemy").forEach(e => e.remove());
-      document.querySelectorAll(".road-line").forEach(e => e.remove());
+      document.querySelectorAll(".enemy, .road-line").forEach(e => e.remove());
 
+      car.style.left = "135px";
       gameInterval = setInterval(gameLoop, 20);
       enemyInterval = setInterval(createEnemy, enemySpawnSpeed);
       roadInterval = setInterval(createRoadLine, 200);
@@ -281,22 +299,19 @@
       clearInterval(roadInterval);
 
       let mensaje = `Puntuación: ${score}<br>Tiempo: ${elapsedTime}s`;
-
       if (score > bestScore) {
         bestScore = score;
         localStorage.setItem("mejorPuntuacion", bestScore);
-        mensaje += `<br><strong>🎉 ¡Nuevo récord! ¡Eres un crack!</strong>`;
+        mensaje += `<br><strong>🎉 ¡Nuevo récord!</strong>`;
       } else {
-        mensaje += `<br>🏆 Récord actual: ${bestScore}`;
+        mensaje += `<br>🏆 Récord: ${bestScore}`;
       }
 
       finalScore.innerHTML = mensaje;
       gameOverDiv.style.display = "block";
     }
 
-    restartBtn.addEventListener("click", () => {
-      startGame();
-    });
+    restartBtn.addEventListener("click", () => startGame());
   </script>
 
 </body>
