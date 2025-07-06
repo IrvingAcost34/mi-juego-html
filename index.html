@@ -13,8 +13,7 @@
       align-items: center;
       height: 100vh;
       user-select: none;
-      -webkit-user-select: none;
-      -ms-user-select: none;
+      font-family: Arial, sans-serif;
     }
 
     #game {
@@ -44,10 +43,11 @@
       position: absolute;
       width: 40px;
       height: 60px;
-      background: red;
       bottom: 20px;
       left: 130px;
-      border-radius: 5px;
+      background-image: url('mi_auto.png');
+      background-size: cover;
+      background-position: center;
       transition: left 0.1s ease;
     }
 
@@ -55,10 +55,10 @@
       position: absolute;
       width: 40px;
       height: 60px;
-      background: yellow;
       top: -60px;
-      border-radius: 5px;
-      animation: enemyMove 3s linear infinite;
+      animation: enemyMove 2.5s linear infinite;
+      background-size: cover;
+      background-position: center;
     }
 
     @keyframes enemyMove {
@@ -66,15 +66,16 @@
       100% { top: 550px; }
     }
 
-    #score {
+    #score, #time {
       position: absolute;
-      top: 10px;
-      left: 10px;
       color: white;
-      font-family: Arial, sans-serif;
       font-size: 16px;
       z-index: 10;
+      font-weight: bold;
     }
+
+    #score { top: 10px; left: 10px; }
+    #time { top: 10px; right: 10px; }
 
     #controls {
       margin-top: 15px;
@@ -91,13 +92,33 @@
       color: white;
       border: 2px solid white;
       border-radius: 10px;
-      user-select: none;
-      -webkit-user-select: none;
-      -ms-user-select: none;
+      cursor: pointer;
     }
 
     button:active {
       background-color: #555;
+    }
+
+    #game-over {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.85);
+      color: white;
+      padding: 20px;
+      border-radius: 15px;
+      text-align: center;
+      display: none;
+      z-index: 20;
+      width: 260px;
+      box-shadow: 0 0 15px 3px black;
+    }
+
+    #game-over button {
+      margin-top: 15px;
+      width: 100%;
+      font-size: 20px;
     }
   </style>
 </head>
@@ -105,7 +126,14 @@
 
   <div id="game">
     <div id="score">Score: 0</div>
+    <div id="time">Time: 0s</div>
     <div id="car"></div>
+    <div id="game-over">
+      <h2>💥 ¡Chocaste!</h2>
+      <p id="final-score"></p>
+      <p id="final-time"></p>
+      <button id="restart-btn">🔁 Reiniciar</button>
+    </div>
   </div>
 
   <div id="controls">
@@ -117,44 +145,56 @@
     const game = document.getElementById("game");
     const car = document.getElementById("car");
     const scoreText = document.getElementById("score");
+    const timeText = document.getElementById("time");
     const leftBtn = document.getElementById("leftBtn");
     const rightBtn = document.getElementById("rightBtn");
+    const gameOverDiv = document.getElementById("game-over");
+    const finalScore = document.getElementById("final-score");
+    const finalTime = document.getElementById("final-time");
+    const restartBtn = document.getElementById("restart-btn");
 
     let score = 0;
-    let gameInterval;
+    let startTime = 0;
+    let elapsedTime = 0;
+    let gameInterval, enemyInterval, roadInterval, moveInterval;
+    let gameRunning = false;
     let keys = {};
+    let leftPressed = false, rightPressed = false;
 
-    // Movimiento del auto con teclado (por si alguien usa PC)
-    document.addEventListener("keydown", (e) => keys[e.key] = true);
-    document.addEventListener("keyup", (e) => keys[e.key] = false);
+    // Controles por teclado
+    document.addEventListener("keydown", (e) => {
+      keys[e.key] = true;
+      if (!gameRunning) startGame();
+    });
+
+    document.addEventListener("keyup", (e) => {
+      keys[e.key] = false;
+    });
+
+    // Controles por botones táctiles
+    leftBtn.addEventListener("mousedown", () => { leftPressed = true; if (!gameRunning) startGame(); });
+    leftBtn.addEventListener("mouseup", () => { leftPressed = false; });
+    leftBtn.addEventListener("touchstart", () => { leftPressed = true; if (!gameRunning) startGame(); });
+    leftBtn.addEventListener("touchend", () => { leftPressed = false; });
+
+    rightBtn.addEventListener("mousedown", () => { rightPressed = true; if (!gameRunning) startGame(); });
+    rightBtn.addEventListener("mouseup", () => { rightPressed = false; });
+    rightBtn.addEventListener("touchstart", () => { rightPressed = true; if (!gameRunning) startGame(); });
+    rightBtn.addEventListener("touchend", () => { rightPressed = false; });
 
     function moveCar() {
       let left = parseInt(window.getComputedStyle(car).getPropertyValue("left"));
-      if (keys["ArrowLeft"] && left > 0) car.style.left = (left - 5) + "px";
-      if (keys["ArrowRight"] && left < 260) car.style.left = (left + 5) + "px";
-    }
-
-    // Movimiento del auto con botones táctiles
-    leftBtn.addEventListener("touchstart", () => moveCarLeft());
-    rightBtn.addEventListener("touchstart", () => moveCarRight());
-
-    // También para que funcione con mouse en PC
-    leftBtn.addEventListener("mousedown", () => moveCarLeft());
-    rightBtn.addEventListener("mousedown", () => moveCarRight());
-
-    function moveCarLeft() {
-      let left = parseInt(car.style.left) || 130;
-      if (left > 0) car.style.left = (left - 20) + "px";
-    }
-
-    function moveCarRight() {
-      let left = parseInt(car.style.left) || 130;
-      if (left < 260) car.style.left = (left + 20) + "px";
+      if ((keys["ArrowLeft"] || leftPressed) && left > 0) car.style.left = (left - 10) + "px";
+      if ((keys["ArrowRight"] || rightPressed) && left < 260) car.style.left = (left + 10) + "px";
     }
 
     function createEnemy() {
       const enemy = document.createElement("div");
       enemy.classList.add("enemy");
+
+      const enemyImages = ['enemigo1.png', 'enemigo2.png', 'enemigo3.png'];
+      const randomIndex = Math.floor(Math.random() * enemyImages.length);
+      enemy.style.backgroundImage = `url('${enemyImages[randomIndex]}')`;
 
       const lanes = [30, 130, 230];
       enemy.style.left = lanes[Math.floor(Math.random() * lanes.length)] + "px";
@@ -188,21 +228,52 @@
 
     function gameLoop() {
       moveCar();
+
       const enemies = document.querySelectorAll(".enemy");
-      enemies.forEach(enemy => {
+      for (const enemy of enemies) {
         if (detectCollision(enemy)) {
-          alert("💥 ¡Chocaste! Puntuación: " + score);
-          location.reload();
+          endGame();
+          return;
         }
-      });
+      }
 
       score++;
       scoreText.textContent = "Score: " + score;
+      elapsedTime = Math.floor((Date.now() - startTime) / 1000);
+      timeText.textContent = "Time: " + elapsedTime + "s";
     }
 
-    gameInterval = setInterval(gameLoop, 20);
-    setInterval(createEnemy, 1200);
-    setInterval(createRoadLine, 200);
+    function startGame() {
+      if (gameRunning) return;
+      gameRunning = true;
+      score = 0;
+      elapsedTime = 0;
+      startTime = Date.now();
+
+      car.style.left = "130px";
+      gameOverDiv.style.display = "none";
+      document.querySelectorAll(".enemy").forEach(e => e.remove());
+      document.querySelectorAll(".road-line").forEach(e => e.remove());
+
+      gameInterval = setInterval(gameLoop, 20);
+      enemyInterval = setInterval(createEnemy, 1200);
+      roadInterval = setInterval(createRoadLine, 200);
+    }
+
+    function endGame() {
+      gameRunning = false;
+      clearInterval(gameInterval);
+      clearInterval(enemyInterval);
+      clearInterval(roadInterval);
+
+      finalScore.textContent = "Puntuación: " + score;
+      finalTime.textContent = "Tiempo: " + elapsedTime + "s";
+      gameOverDiv.style.display = "block";
+    }
+
+    restartBtn.addEventListener("click", () => {
+      startGame();
+    });
   </script>
 
 </body>
