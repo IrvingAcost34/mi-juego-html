@@ -41,10 +41,10 @@
 
     #car {
       position: absolute;
-      width: 50px;
-      height: 80px;
+      width: 60px;
+      height: 100px;
       bottom: 20px;
-      left: 135px;
+      left: 130px;
       background-image: url('mi_auto.png');
       background-size: contain;
       background-position: center;
@@ -54,9 +54,9 @@
 
     .enemy {
       position: absolute;
-      width: 50px;
-      height: 80px;
-      top: -80px;
+      width: 60px;
+      height: 100px;
+      top: -100px;
       animation: enemyMove 2.5s linear infinite;
       background-size: contain;
       background-position: center;
@@ -64,12 +64,12 @@
     }
 
     .enemy.enemy3 {
-      width: 60px;
-      height: 90px;
+      width: 70px;
+      height: 110px;
     }
 
     @keyframes enemyMove {
-      0% { top: -80px; }
+      0% { top: -100px; }
       100% { top: 540px; }
     }
 
@@ -84,29 +84,24 @@
     #score { top: 10px; left: 10px; }
     #time { top: 10px; right: 10px; }
 
-    #metaBar {
-      position: absolute;
-      top: 35px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 18px;
-      color: gold;
-      background: rgba(0, 0, 0, 0.7);
-      padding: 3px 10px;
-      border-radius: 10px;
-      display: none;
-    }
-
-    #banderita {
+    #metaProgress {
       position: absolute;
       top: 5px;
       left: 50%;
       transform: translateX(-50%);
-      width: 30px;
-      height: 30px;
-      background-image: url('meta.png');
-      background-size: contain;
-      background-repeat: no-repeat;
+      width: 80%;
+      height: 10px;
+      background: rgba(255,255,255,0.2);
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+
+    #metaProgressBar {
+      width: 0%;
+      height: 100%;
+      background: gold;
+      transition: width 0.3s;
     }
 
     #controls {
@@ -155,8 +150,9 @@
   <div id="game">
     <div id="score">Score: 0</div>
     <div id="time">Time: 0s</div>
-    <div id="metaBar">🎯 ¡Meta conseguida!</div>
-    <div id="banderita"></div>
+    <div id="metaProgress">
+      <div id="metaProgressBar"></div>
+    </div>
     <div id="car"></div>
     <div id="game-over">
       <h2>💥 ¡Chocaste!</h2>
@@ -176,13 +172,13 @@
     const car = document.getElementById("car");
     const scoreText = document.getElementById("score");
     const timeText = document.getElementById("time");
+    const metaProgressBar = document.getElementById("metaProgressBar");
     const leftBtn = document.getElementById("leftBtn");
     const rightBtn = document.getElementById("rightBtn");
     const gameOverDiv = document.getElementById("game-over");
     const finalScore = document.getElementById("final-score");
     const finalTime = document.getElementById("final-time");
     const restartBtn = document.getElementById("restart-btn");
-    const metaBar = document.getElementById("metaBar");
 
     let score = 0, elapsedTime = 0, startTime = 0;
     let gameInterval, enemyInterval, roadInterval;
@@ -195,36 +191,23 @@
 
     const enemyImages = ['enemigo1.png', 'enemigo2.png', 'enemigo3.png'];
 
-    document.addEventListener("keydown", e => { keys[e.key] = true; if (!gameRunning) startGame(); });
-    document.addEventListener("keyup", e => keys[e.key] = false);
-    leftBtn.addEventListener("mousedown", () => { leftPressed = true; if (!gameRunning) startGame(); });
-    leftBtn.addEventListener("mouseup", () => leftPressed = false);
-    rightBtn.addEventListener("mousedown", () => { rightPressed = true; if (!gameRunning) startGame(); });
-    rightBtn.addEventListener("mouseup", () => rightPressed = false);
-    leftBtn.addEventListener("touchstart", () => { leftPressed = true; if (!gameRunning) startGame(); });
-    leftBtn.addEventListener("touchend", () => leftPressed = false);
-    rightBtn.addEventListener("touchstart", () => { rightPressed = true; if (!gameRunning) startGame(); });
-    rightBtn.addEventListener("touchend", () => rightPressed = false);
-
     function moveCar() {
       let left = parseInt(getComputedStyle(car).getPropertyValue("left"));
       if ((keys["ArrowLeft"] || leftPressed) && left > 0) car.style.left = (left - 10) + "px";
-      if ((keys["ArrowRight"] || rightPressed) && left < 270) car.style.left = (left + 10) + "px";
+      if ((keys["ArrowRight"] || rightPressed) && left < 260) car.style.left = (left + 10) + "px";
     }
 
     function createEnemy() {
       const enemy = document.createElement("div");
       enemy.classList.add("enemy");
-
       const index = Math.floor(Math.random() * enemyImages.length);
       const img = enemyImages[index];
       enemy.style.backgroundImage = `url('${img}')`;
       if (img.includes('enemigo3')) enemy.classList.add("enemy3");
-
       const lanes = [30, 130, 230];
       enemy.style.left = lanes[Math.floor(Math.random() * lanes.length)] + "px";
       game.appendChild(enemy);
-      setTimeout(() => enemy.remove(), 3000);
+      setTimeout(() => enemy.remove(), 4000);
     }
 
     function createRoadLine() {
@@ -237,12 +220,7 @@
     function detectCollision(a, b) {
       const rectA = a.getBoundingClientRect();
       const rectB = b.getBoundingClientRect();
-      return !(
-        rectA.top > rectB.bottom ||
-        rectA.bottom < rectB.top ||
-        rectA.right < rectB.left ||
-        rectA.left > rectB.right
-      );
+      return !(rectA.top > rectB.bottom || rectA.bottom < rectB.top || rectA.right < rectB.left || rectA.left > rectB.right);
     }
 
     function updateDificultad() {
@@ -253,11 +231,16 @@
       }
     }
 
+    function updateMetaBar() {
+      let progreso = Math.min(100, Math.floor((score % metaActual) / metaActual * 100));
+      metaProgressBar.style.width = progreso + "%";
+    }
+
     function checkMeta() {
       if (score >= metaActual) {
-        metaBar.style.display = "block";
-        setTimeout(() => metaBar.style.display = "none", 1500);
         metaActual += 300;
+        metaProgressBar.style.width = "0%";
+        alert("✨ ¡Meta conseguida!");
       }
     }
 
@@ -266,12 +249,12 @@
       document.querySelectorAll(".enemy").forEach(enemy => {
         if (detectCollision(enemy, car)) endGame();
       });
-
       score++;
       scoreText.textContent = "Score: " + score;
       elapsedTime = Math.floor((Date.now() - startTime) / 1000);
       timeText.textContent = "Time: " + elapsedTime + "s";
       updateDificultad();
+      updateMetaBar();
       checkMeta();
     }
 
@@ -285,8 +268,7 @@
       startTime = Date.now();
       gameOverDiv.style.display = "none";
       document.querySelectorAll(".enemy, .road-line").forEach(e => e.remove());
-
-      car.style.left = "135px";
+      car.style.left = "130px";
       gameInterval = setInterval(gameLoop, 20);
       enemyInterval = setInterval(createEnemy, enemySpawnSpeed);
       roadInterval = setInterval(createRoadLine, 200);
@@ -297,7 +279,6 @@
       clearInterval(gameInterval);
       clearInterval(enemyInterval);
       clearInterval(roadInterval);
-
       let mensaje = `Puntuación: ${score}<br>Tiempo: ${elapsedTime}s`;
       if (score > bestScore) {
         bestScore = score;
@@ -306,11 +287,20 @@
       } else {
         mensaje += `<br>🏆 Récord: ${bestScore}`;
       }
-
       finalScore.innerHTML = mensaje;
       gameOverDiv.style.display = "block";
     }
 
+    document.addEventListener("keydown", e => { keys[e.key] = true; if (!gameRunning) startGame(); });
+    document.addEventListener("keyup", e => keys[e.key] = false);
+    leftBtn.addEventListener("mousedown", () => { leftPressed = true; if (!gameRunning) startGame(); });
+    leftBtn.addEventListener("mouseup", () => leftPressed = false);
+    rightBtn.addEventListener("mousedown", () => { rightPressed = true; if (!gameRunning) startGame(); });
+    rightBtn.addEventListener("mouseup", () => rightPressed = false);
+    leftBtn.addEventListener("touchstart", () => { leftPressed = true; if (!gameRunning) startGame(); });
+    leftBtn.addEventListener("touchend", () => leftPressed = false);
+    rightBtn.addEventListener("touchstart", () => { rightPressed = true; if (!gameRunning) startGame(); });
+    rightBtn.addEventListener("touchend", () => rightPressed = false);
     restartBtn.addEventListener("click", () => startGame());
   </script>
 
