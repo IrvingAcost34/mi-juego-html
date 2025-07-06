@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+x<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
@@ -46,8 +46,9 @@
       bottom: 20px;
       left: 130px;
       background-image: url('mi_auto.png');
-      background-size: cover;
+      background-size: contain;
       background-position: center;
+      background-repeat: no-repeat;
       transition: left 0.1s ease;
     }
 
@@ -57,8 +58,9 @@
       height: 60px;
       top: -60px;
       animation: enemyMove 2.5s linear infinite;
-      background-size: cover;
+      background-size: contain;
       background-position: center;
+      background-repeat: no-repeat;
     }
 
     @keyframes enemyMove {
@@ -156,12 +158,11 @@
     let score = 0;
     let startTime = 0;
     let elapsedTime = 0;
-    let gameInterval, enemyInterval, roadInterval, moveInterval;
+    let gameInterval, enemyInterval, roadInterval;
     let gameRunning = false;
     let keys = {};
     let leftPressed = false, rightPressed = false;
 
-    // Controles por teclado
     document.addEventListener("keydown", (e) => {
       keys[e.key] = true;
       if (!gameRunning) startGame();
@@ -171,7 +172,6 @@
       keys[e.key] = false;
     });
 
-    // Controles por botones táctiles
     leftBtn.addEventListener("mousedown", () => { leftPressed = true; if (!gameRunning) startGame(); });
     leftBtn.addEventListener("mouseup", () => { leftPressed = false; });
     leftBtn.addEventListener("touchstart", () => { leftPressed = true; if (!gameRunning) startGame(); });
@@ -216,65 +216,4 @@
 
     function detectCollision(enemy) {
       const carRect = car.getBoundingClientRect();
-      const enemyRect = enemy.getBoundingClientRect();
-
-      return !(
-        carRect.top > enemyRect.bottom ||
-        carRect.bottom < enemyRect.top ||
-        carRect.right < enemyRect.left ||
-        carRect.left > enemyRect.right
-      );
-    }
-
-    function gameLoop() {
-      moveCar();
-
-      const enemies = document.querySelectorAll(".enemy");
-      for (const enemy of enemies) {
-        if (detectCollision(enemy)) {
-          endGame();
-          return;
-        }
-      }
-
-      score++;
-      scoreText.textContent = "Score: " + score;
-      elapsedTime = Math.floor((Date.now() - startTime) / 1000);
-      timeText.textContent = "Time: " + elapsedTime + "s";
-    }
-
-    function startGame() {
-      if (gameRunning) return;
-      gameRunning = true;
-      score = 0;
-      elapsedTime = 0;
-      startTime = Date.now();
-
-      car.style.left = "130px";
-      gameOverDiv.style.display = "none";
-      document.querySelectorAll(".enemy").forEach(e => e.remove());
-      document.querySelectorAll(".road-line").forEach(e => e.remove());
-
-      gameInterval = setInterval(gameLoop, 20);
-      enemyInterval = setInterval(createEnemy, 1200);
-      roadInterval = setInterval(createRoadLine, 200);
-    }
-
-    function endGame() {
-      gameRunning = false;
-      clearInterval(gameInterval);
-      clearInterval(enemyInterval);
-      clearInterval(roadInterval);
-
-      finalScore.textContent = "Puntuación: " + score;
-      finalTime.textContent = "Tiempo: " + elapsedTime + "s";
-      gameOverDiv.style.display = "block";
-    }
-
-    restartBtn.addEventListener("click", () => {
-      startGame();
-    });
-  </script>
-
-</body>
-</html>
+      co
