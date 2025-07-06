@@ -54,17 +54,17 @@
 
     .enemy {
       position: absolute;
-      width: 60px;
-      height: 100px;
-      top: -100px;
+      width: 70px;
+      height: 110px;
+      top: -110px;
       background-size: contain;
       background-position: center;
       background-repeat: no-repeat;
     }
 
     .enemy.enemy3 {
-      width: 80px;
-      height: 130px;
+      width: 90px;
+      height: 140px;
     }
 
     #score, #time {
@@ -100,12 +100,12 @@
 
     #metaMessage {
       position: absolute;
-      top: 45%;
+      top: 15%;
       left: 50%;
       transform: translate(-50%, -50%);
       display: none;
-      animation: fadeOut 2s forwards;
-      z-index: 20;
+      z-index: 30;
+      animation: metaAnim 2s ease-out;
     }
 
     #metaMessage img {
@@ -113,10 +113,10 @@
       height: 80px;
     }
 
-    @keyframes fadeOut {
-      0% { opacity: 1; }
-      80% { opacity: 1; }
-      100% { opacity: 0; display: none; }
+    @keyframes metaAnim {
+      0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+      50% { transform: translate(-50%, -50%) scale(1.5); opacity: 1; }
+      100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
     }
 
     #controls {
@@ -223,13 +223,24 @@
       enemy.classList.add("enemy");
       const lanes = [30, 130, 230];
       enemy.style.left = lanes[Math.floor(Math.random() * lanes.length)] + "px";
-      enemy.style.backgroundImage = "url('enemigo.png')";
-      if (Math.random() < 0.33) enemy.classList.add("enemy3");
+
+      // Imagen aleatoria para enemigos
+      const enemyImages = ['enemigo1.png', 'enemigo2.png', 'enemigo3.png'];
+      const index = Math.floor(Math.random() * enemyImages.length);
+      enemy.style.backgroundImage = `url('${enemyImages[index]}')`;
+      if (index === 2) enemy.classList.add("enemy3");
+
       game.appendChild(enemy);
 
-      setTimeout(() => {
-        if (enemy.parentNode) enemy.remove();
-      }, 3000);
+      const move = enemy.animate([
+        { top: '-110px' },
+        { top: '530px' }
+      ], {
+        duration: 3000,
+        easing: 'linear'
+      });
+
+      move.onfinish = () => enemy.remove();
     }
 
     function createRoadLine() {
@@ -280,7 +291,7 @@
         metaActual += 300;
         metaProgressBar.style.width = "0%";
         metaMessage.style.display = "block";
-        metaMessage.style.animation = "fadeOut 2s forwards";
+        metaMessage.style.animation = "metaAnim 2s ease-out";
         setTimeout(() => metaMessage.style.display = "none", 2000);
       }
     }
