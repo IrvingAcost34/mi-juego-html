@@ -1,4 +1,4 @@
-x<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
@@ -95,6 +95,7 @@ x<!DOCTYPE html>
       border: 2px solid white;
       border-radius: 10px;
       cursor: pointer;
+      user-select: none;
     }
 
     button:active {
@@ -162,6 +163,8 @@ x<!DOCTYPE html>
     let gameRunning = false;
     let keys = {};
     let leftPressed = false, rightPressed = false;
+    let enemySpawnSpeed = 1200;
+    let bestScore = localStorage.getItem("mejorPuntuacion") || 0;
 
     document.addEventListener("keydown", (e) => {
       keys[e.key] = true;
@@ -216,4 +219,85 @@ x<!DOCTYPE html>
 
     function detectCollision(enemy) {
       const carRect = car.getBoundingClientRect();
-      co
+      const enemyRect = enemy.getBoundingClientRect();
+
+      return !(
+        carRect.top > enemyRect.bottom ||
+        carRect.bottom < enemyRect.top ||
+        carRect.right < enemyRect.left ||
+        carRect.left > enemyRect.right
+      );
+    }
+
+    function updateDificultad() {
+      if (score % 200 === 0 && enemySpawnSpeed > 400) {
+        enemySpawnSpeed -= 100;
+        clearInterval(enemyInterval);
+        enemyInterval = setInterval(createEnemy, enemySpawnSpeed);
+      }
+    }
+
+    function gameLoop() {
+      moveCar();
+
+      const enemies = document.querySelectorAll(".enemy");
+      for (const enemy of enemies) {
+        if (detectCollision(enemy)) {
+          endGame();
+          return;
+        }
+      }
+
+      score++;
+      scoreText.textContent = "Score: " + score;
+      elapsedTime = Math.floor((Date.now() - startTime) / 1000);
+      timeText.textContent = "Time: " + elapsedTime + "s";
+
+      updateDificultad();
+    }
+
+    function startGame() {
+      if (gameRunning) return;
+      gameRunning = true;
+      score = 0;
+      elapsedTime = 0;
+      enemySpawnSpeed = 1200;
+      startTime = Date.now();
+
+      car.style.left = "130px";
+      gameOverDiv.style.display = "none";
+      document.querySelectorAll(".enemy").forEach(e => e.remove());
+      document.querySelectorAll(".road-line").forEach(e => e.remove());
+
+      gameInterval = setInterval(gameLoop, 20);
+      enemyInterval = setInterval(createEnemy, enemySpawnSpeed);
+      roadInterval = setInterval(createRoadLine, 200);
+    }
+
+    function endGame() {
+      gameRunning = false;
+      clearInterval(gameInterval);
+      clearInterval(enemyInterval);
+      clearInterval(roadInterval);
+
+      let mensaje = `Puntuación: ${score}<br>Tiempo: ${elapsedTime}s`;
+
+      if (score > bestScore) {
+        bestScore = score;
+        localStorage.setItem("mejorPuntuacion", bestScore);
+        mensaje += `<br><strong>🎉 ¡Nuevo récord! ¡Eres un crack!</strong>`;
+      } else {
+        mensaje += `<br>🏆 Récord actual: ${bestScore}`;
+      }
+
+      finalScore.innerHTML = mensaje;
+      gameOverDiv.style.display = "block";
+    }
+
+    restartBtn.addEventListener("click", () => {
+      startGame();
+    });
+  </script>
+
+</body>
+</html>
