@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Car Rush Escape</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #222;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    #game {
+      position: relative;
+      width: 300px;
+      height: 500px;
+      background: #444;
+      overflow: hidden;
+      border: 4px solid #fff;
+    }
+
+    .road-line {
+      position: absolute;
+      width: 10px;
+      height: 50px;
+      background: white;
+      left: 145px;
+      animation: road 1s linear infinite;
+    }
+
+    @keyframes road {
+      0% { top: -50px; }
+      100% { top: 500px; }
+    }
+
+    #car {
+      position: absolute;
+      width: 40px;
+      height: 60px;
+      background: red;
+      bottom: 20px;
+      left: 130px;
+      border-radius: 5px;
+    }
+
+    .enemy {
+      position: absolute;
+      width: 40px;
+      height: 60px;
+      background: yellow;
+      top: -60px;
+      border-radius: 5px;
+      animation: enemyMove 3s linear infinite;
+    }
+
+    @keyframes enemyMove {
+      0% { top: -60px; }
+      100% { top: 550px; }
+    }
+
+    #score {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      color: white;
+      font-family: Arial, sans-serif;
+      font-size: 16px;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+
+<div id="game">
+  <div id="score">Score: 0</div>
+  <div id="car"></div>
+</div>
+
+<script>
+  const game = document.getElementById("game");
+  const car = document.getElementById("car");
+  const scoreText = document.getElementById("score");
+
+  let score = 0;
+  let gameInterval;
+  let keys = {};
+
+  // Movimiento del auto
+  document.addEventListener("keydown", (e) => keys[e.key] = true);
+  document.addEventListener("keyup", (e) => keys[e.key] = false);
+
+  function moveCar() {
+    let left = parseInt(window.getComputedStyle(car).getPropertyValue("left"));
+    if (keys["ArrowLeft"] && left > 0) car.style.left = (left - 5) + "px";
+    if (keys["ArrowRight"] && left < 260) car.style.left = (left + 5) + "px";
+  }
+
+  function createEnemy() {
+    const enemy = document.createElement("div");
+    enemy.classList.add("enemy");
+
+    // Posición aleatoria (3 carriles)
+    const lanes = [30, 130, 230];
+    enemy.style.left = lanes[Math.floor(Math.random() * lanes.length)] + "px";
+    game.appendChild(enemy);
+
+    // Eliminar después del movimiento
+    setTimeout(() => {
+      if (enemy.parentNode) enemy.remove();
+    }, 3000);
+  }
+
+  function createRoadLine() {
+    const line = document.createElement("div");
+    line.classList.add("road-line");
+    game.appendChild(line);
+    setTimeout(() => {
+      if (line.parentNode) line.remove();
+    }, 1000);
+  }
+
+  function detectCollision(enemy) {
+    const carRect = car.getBoundingClientRect();
+    const enemyRect = enemy.getBoundingClientRect();
+
+    return !(
+      carRect.top > enemyRect.bottom ||
+      carRect.bottom < enemyRect.top ||
+      carRect.right < enemyRect.left ||
+      carRect.left > enemyRect.right
+    );
+  }
+
+  function gameLoop() {
+    moveCar();
+    const enemies = document.querySelectorAll(".enemy");
+    enemies.forEach(enemy => {
+      if (detectCollision(enemy)) {
+        alert("💥 ¡Chocaste! Puntuación: " + score);
+        location.reload();
+      }
+    });
+
+    score++;
+    scoreText.textContent = "Score: " + score;
+  }
+
+  // Iniciar el juego
+  gameInterval = setInterval(gameLoop, 20);
+  setInterval(createEnemy, 1200);
+  setInterval(createRoadLine, 200);
+</script>
+
+</body>
+</html>
