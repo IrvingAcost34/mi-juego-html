@@ -57,7 +57,6 @@
       width: 60px;
       height: 100px;
       top: -100px;
-      animation: enemyMove 2.5s linear infinite;
       background-size: contain;
       background-position: center;
       background-repeat: no-repeat;
@@ -66,11 +65,6 @@
     .enemy.enemy3 {
       width: 80px;
       height: 130px;
-    }
-
-    @keyframes enemyMove {
-      0% { top: -130px; }
-      100% { top: 540px; }
     }
 
     #score, #time {
@@ -167,7 +161,6 @@
   </style>
 </head>
 <body>
-
   <div id="game">
     <div id="score">Score: 0</div>
     <div id="time">Time: 0s</div>
@@ -192,7 +185,95 @@
   </div>
 
   <script>
+    const game = document.getElementById("game");
+    const car = document.getElementById("car");
+    const scoreText = document.getElementById("score");
+    const timeText = document.getElementById("time");
+    const metaProgressBar = document.getElementById("metaProgressBar");
     const metaMessage = document.getElementById("metaMessage");
+    const restartBtn = document.getElementById("restart-btn");
+    const gameOverDiv = document.getElementById("game-over");
+    const finalScore = document.getElementById("final-score");
+    const finalTime = document.getElementById("final-time");
+    const leftBtn = document.getElementById("leftBtn");
+    const rightBtn = document.getElementById("rightBtn");
+
+    let score = 0;
+    let time = 0;
+    let metaActual = 300;
+    let keys = {};
+    let interval;
+
+    document.addEventListener("keydown", e => keys[e.key] = true);
+    document.addEventListener("keyup", e => keys[e.key] = false);
+
+    leftBtn.addEventListener("touchstart", () => keys["ArrowLeft"] = true);
+    leftBtn.addEventListener("touchend", () => keys["ArrowLeft"] = false);
+    rightBtn.addEventListener("touchstart", () => keys["ArrowRight"] = true);
+    rightBtn.addEventListener("touchend", () => keys["ArrowRight"] = false);
+
+    function moveCar() {
+      let left = parseInt(window.getComputedStyle(car).getPropertyValue("left"));
+      if (keys["ArrowLeft"] && left > 0) car.style.left = (left - 5) + "px";
+      if (keys["ArrowRight"] && left < 260) car.style.left = (left + 5) + "px";
+    }
+
+    function createEnemy() {
+      const enemy = document.createElement("div");
+      enemy.classList.add("enemy");
+      const lanes = [30, 130, 230];
+      enemy.style.left = lanes[Math.floor(Math.random() * lanes.length)] + "px";
+      enemy.style.backgroundImage = "url('enemigo.png')";
+      if (Math.random() < 0.33) enemy.classList.add("enemy3");
+      game.appendChild(enemy);
+
+      setTimeout(() => {
+        if (enemy.parentNode) enemy.remove();
+      }, 3000);
+    }
+
+    function createRoadLine() {
+      const line = document.createElement("div");
+      line.classList.add("road-line");
+      game.appendChild(line);
+      setTimeout(() => {
+        if (line.parentNode) line.remove();
+      }, 1000);
+    }
+
+    function detectCollision(enemy) {
+      const carRect = car.getBoundingClientRect();
+      const enemyRect = enemy.getBoundingClientRect();
+      return !(
+        carRect.top > enemyRect.bottom ||
+        carRect.bottom < enemyRect.top ||
+        carRect.right < enemyRect.left ||
+        carRect.left > enemyRect.right
+      );
+    }
+
+    function gameLoop() {
+      moveCar();
+      score++;
+      scoreText.textContent = "Score: " + score;
+      metaProgressBar.style.width = ((score % 300) / 300 * 100) + "%";
+      checkMeta();
+
+      const enemies = document.querySelectorAll(".enemy");
+      enemies.forEach(enemy => {
+        if (detectCollision(enemy)) {
+          gameOver();
+        }
+      });
+    }
+
+    function gameOver() {
+      clearInterval(interval);
+      clearInterval(timeInterval);
+      gameOverDiv.style.display = "block";
+      finalScore.textContent = "Puntuación: " + score;
+      finalTime.textContent = "Tiempo: " + time + "s";
+    }
 
     function checkMeta() {
       if (score >= metaActual) {
@@ -203,7 +284,17 @@
         setTimeout(() => metaMessage.style.display = "none", 2000);
       }
     }
-  </script>
 
+    let timeInterval = setInterval(() => {
+      time++;
+      timeText.textContent = "Time: " + time + "s";
+    }, 1000);
+
+    restartBtn.addEventListener("click", () => location.reload());
+
+    interval = setInterval(gameLoop, 20);
+    setInterval(createEnemy, 1200);
+    setInterval(createRoadLine, 200);
+  </script>
 </body>
 </html>
