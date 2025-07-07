@@ -1,3 +1,190 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Car Rush Escape</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #222;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-family: Arial, sans-serif;
+      user-select: none;
+    }
+    #game {
+      position: relative;
+      width: 320px;
+      height: 520px;
+      background: #444;
+      overflow: hidden;
+      border: 4px solid #fff;
+    }
+    .road-line {
+      position: absolute;
+      width: 10px;
+      height: 60px;
+      background: white;
+      left: 155px;
+      animation: road 1s linear infinite;
+      z-index: 0;
+    }
+    @keyframes road {
+      0% { top: -60px; }
+      100% { top: 520px; }
+    }
+    #car {
+      position: absolute;
+      width: 50px;
+      height: 80px;
+      bottom: 20px;
+      background-image: url('mi_auto.png');
+      background-size: contain;
+      background-position: center;
+      background-repeat: no-repeat;
+      z-index: 2;
+      transition: left 0.1s ease-in-out;
+    }
+    #car::after {
+      content: "";
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 10px;
+      height: 10px;
+      background: white;
+      border-radius: 50%;
+      opacity: 0.4;
+      box-shadow: 0 0 10px 4px white;
+      animation: trail 0.5s linear infinite;
+    }
+    @keyframes trail {
+      0% { transform: translateX(-50%) translateY(0); opacity: 0.4; }
+      100% { transform: translateX(-50%) translateY(10px); opacity: 0; }
+    }
+    .enemy {
+      position: absolute;
+      width: 50px;
+      height: 80px;
+      top: -80px;
+      animation: enemyMove 2.5s linear infinite;
+      background-size: contain;
+      background-position: center;
+      background-repeat: no-repeat;
+      z-index: 2;
+    }
+    .enemy.enemy3 {
+      width: 60px;
+      height: 100px;
+    }
+    @keyframes enemyMove {
+      0% { top: -80px; }
+      100% { top: 540px; }
+    }
+    #score, #time {
+      position: absolute;
+      color: white;
+      font-size: 16px;
+      z-index: 10;
+      font-weight: bold;
+    }
+    #score { top: 10px; left: 10px; }
+    #time { top: 10px; right: 10px; }
+    #metaBar {
+      position: absolute;
+      top: 35px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 200px;
+      height: 20px;
+      background: rgba(255,255,255,0.2);
+      border: 2px solid gold;
+      border-radius: 10px;
+      overflow: hidden;
+      display: none;
+      z-index: 5;
+    }
+    #metaProgress {
+      width: 0;
+      height: 100%;
+      background: gold;
+      transition: width 0.1s linear;
+    }
+    #banderita {
+      position: absolute;
+      top: 30px;
+      left: calc(50% - 15px);
+      width: 30px;
+      height: 30px;
+      background-image: url('meta.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+      display: none;
+      z-index: 15;
+    }
+    #controls {
+      margin-top: 15px;
+      width: 300px;
+      display: flex;
+      justify-content: space-between;
+    }
+    button {
+      width: 45%;
+      font-size: 24px;
+      padding: 10px 0;
+      background-color: #222;
+      color: white;
+      border: 2px solid white;
+      border-radius: 10px;
+      cursor: pointer;
+      user-select: none;
+    }
+    button:active { background-color: #555; }
+    #game-over {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.85);
+      color: white;
+      padding: 20px;
+      border-radius: 15px;
+      text-align: center;
+      display: none;
+      z-index: 20;
+      width: 260px;
+      box-shadow: 0 0 15px 3px black;
+    }
+    #game-over button {
+      margin-top: 15px;
+      width: 100%;
+      font-size: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div id="game">
+    <div id="score">Score: 0</div>
+    <div id="time">Time: 0s</div>
+    <div id="metaBar"><div id="metaProgress"></div></div>
+    <div id="banderita"></div>
+    <div id="car"></div>
+    <div id="game-over">
+      <h2>💥 ¡Chocaste!</h2>
+      <p id="final-score"></p>
+      <p id="final-time"></p>
+      <button id="restart-btn">🔁 Reiniciar</button>
+    </div>
+  </div>
+  <div id="controls">
+    <button id="leftBtn">◀️</button>
+    <button id="rightBtn">▶️</button>
+  </div>
+
 <script>
   const car = document.getElementById("car");
   const scoreText = document.getElementById("score");
